@@ -52,6 +52,9 @@ const updateContact = async (contactId, body) => {
 
   const currentContact = await getContactById(currentId);
 
+  if (!currentContact) {
+    return null;
+  }
   const newContactsList = contacts.filter(
     (contact) => contact.id !== contactId
   );
