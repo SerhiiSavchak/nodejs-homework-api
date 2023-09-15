@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const contactsAPI = require("../../models/contacts");
 
-const validateData = require("../../helpers/validateData");
+const Joi = require("../../helpers/validateData");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -41,7 +41,7 @@ router.delete("/:contactId", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const validate = validateData(req.body);
+    const validate = Joi.validateData(req.body);
 
     if (validate.error) {
       const errorMessage = { message: validate.error.details[0].message };
@@ -66,7 +66,7 @@ router.put("/:contactId", async (req, res, next) => {
       res.status(400).json({ message: `missing fields` });
       return;
     }
-    const validate = validateData(req.body);
+    const validate = Joi.validateData(req.body);
     if (validate.error) {
       const errorMessage = { message: validate.error.details[0].message };
       return res.status(400).json(errorMessage);
@@ -90,8 +90,15 @@ router.put("/:contactId", async (req, res, next) => {
 router.patch("/:contactId/favorite", async (req, res, next) => {
   try {
     if (Object.keys(req.body).length === 0) {
-      res.status(400).json({ message: `missing field favorite` });
+      return res.status(400).json({ message: `missing field favorite` });
     }
+
+    const validate = Joi.validateFavorite(req.body);
+    if (validate.error) {
+      const errorMessage = { message: validate.error.details[0].message };
+      return res.status(400).json(errorMessage);
+    }
+
     const data = await contactsAPI.updateStatusContact(
       req.params.contactId,
       req.body

@@ -19,4 +19,17 @@ function validateData(data) {
   return schema.validate(data);
 }
 
-module.exports = validateData;
+function validateFavorite(data) {
+  const schema = Joi.object({
+    favorite: Joi.boolean().required().messages({
+      "boolean.base": `"favorite" should be a boolean`,
+      "any.required": `missing required favorite field`,
+    }),
+  });
+  return schema.validate(data);
+}
+
+module.exports = {
+  validateData,
+  validateFavorite,
+};
