@@ -14,6 +14,7 @@ function validateData(data) {
       "string.base": `"email" should be a string`,
       "any.required": `missing required email field`,
     }),
+    favorite: Joi.boolean(),
   });
   return schema.validate(data);
 }
