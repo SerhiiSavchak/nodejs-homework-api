@@ -14,8 +14,22 @@ function validateData(data) {
       "string.base": `"email" should be a string`,
       "any.required": `missing required email field`,
     }),
+    favorite: Joi.boolean(),
   });
   return schema.validate(data);
 }
 
-module.exports = validateData;
+function validateFavorite(data) {
+  const schema = Joi.object({
+    favorite: Joi.boolean().required().messages({
+      "boolean.base": `"favorite" should be a boolean`,
+      "any.required": `missing required favorite field`,
+    }),
+  });
+  return schema.validate(data);
+}
+
+module.exports = {
+  validateData,
+  validateFavorite,
+};
