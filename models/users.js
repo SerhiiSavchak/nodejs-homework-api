@@ -1,6 +1,10 @@
 const User = require("../db/dbUsers");
 const hashApi = require("../helpers/hashPassword");
 const tokenApi = require("../helpers/token");
+const gravatar = require("gravatar");
+const fs = require("fs/promises");
+const path = require("path");
+const changeAvatarSize = require("../helpers/jimp");
 
 const createUser = async (body) => {
   const { email } = body;
@@ -10,7 +14,13 @@ const createUser = async (body) => {
     return null;
   }
   const hashPassword = await hashApi.getHashPassword(body.password);
-  const newUser = await User.create({ ...body, password: hashPassword });
+  const avatarURL = gravatar.url(email);
+
+  const newUser = await User.create({
+    ...body,
+    password: hashPassword,
+    avatarURL,
+  });
 
   return (
     {
@@ -86,10 +96,32 @@ const updateSupUser = async (userId, body) => {
   return { message: "Subscription updated successful" } || null;
 };
 
+const updateAvatarUser = async (file, userId) => {
+  const currentId = String(userId);
+
+  const avatarsDir = path.join(__dirname, "../", "public", "avatars");
+
+  const { path: tempUpload, originalname } = file;
+
+  await changeAvatarSize(tempUpload);
+
+  const filename = `${currentId}_${originalname}`;
+
+  const resultUpload = path.join(avatarsDir, filename);
+
+  await fs.rename(tempUpload, resultUpload);
+
+  const avatarPath = path.join("avatars", filename);
+
+  await User.findByIdAndUpdate(currentId, { avatarURL: avatarPath });
+  return { avatarURL: avatarPath };
+};
+
 module.exports = {
   createUser,
   loginUser,
   logoutUser,
   currentUser,
   updateSupUser,
+  updateAvatarUser,
 };
