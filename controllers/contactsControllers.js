@@ -1,14 +1,21 @@
 const contactsAPI = require("../models/contacts");
-const validateError = require("../helpers/validateError");
-const Joi = require("../helpers/validateData");
+const HttpError = require("../helpers/httpError");
+const Joi = require("../helpers/validateContact");
 
 const getAllContacts = async (req, res, next) => {
   try {
-    const data = await contactsAPI.listContacts();
+    const { page = 1, limit = 10, favorite } = req.query;
+
+    const data = await contactsAPI.listContacts(
+      req.user,
+      page,
+      limit,
+      favorite
+    );
 
     res.status(200).json(data);
   } catch (error) {
-    res.status(404).json({ message: "Error request" });
+    next(HttpError(404, "Error request"));
   }
 };
 
@@ -16,11 +23,12 @@ const getContactById = async (req, res, next) => {
   try {
     const data = await contactsAPI.getContactById(req.params.contactId);
     if (!data) {
-      throw new Error();
+      throw HttpError(404, "Not found");
     }
     res.status(200).json(data);
   } catch (error) {
-    res.status(404).json({ message: "Not found" });
+    console.log(error);
+    next(error);
   }
 };
 
@@ -29,42 +37,43 @@ const deleteContactById = async (req, res, next) => {
     const data = await contactsAPI.removeContact(req.params.contactId);
 
     if (!data) {
-      throw new Error();
+      throw HttpError(404, "Not found");
     }
     res.status(200).json({ message: "Contact deleted" });
   } catch (error) {
-    res.status(404).json({ message: "Not found" });
+    next(error);
   }
 };
 
 const addContact = async (req, res, next) => {
   try {
-    const validate = Joi.validateData(req.body);
+    const validate = Joi.validateContact(req.body);
 
     if (validate.error) {
-      return validateError(validate, res);
+      throw HttpError(400, validate.error.details[0].message);
     }
-    const data = await contactsAPI.addContact(req.body);
+
+    const data = await contactsAPI.addContact(req.body, req.user);
 
     if (!data) {
-      throw new Error();
+      throw HttpError(404);
     }
 
     res.status(201).json(data);
   } catch (error) {
     console.log(error.message);
+    next(error);
   }
 };
 
 const updateContact = async (req, res, next) => {
   try {
     if (Object.keys(req.body).length === 0) {
-      res.status(400).json({ message: `missing fields` });
-      return;
+      throw HttpError(400, "missing fields");
     }
-    const validate = Joi.validateData(req.body);
+    const validate = Joi.validateContact(req.body);
     if (validate.error) {
-      return validateError(validate, res);
+      throw HttpError(400, validate.error.details[0].message);
     }
     const data = await contactsAPI.updateContact(
       req.params.contactId,
@@ -72,25 +81,25 @@ const updateContact = async (req, res, next) => {
     );
 
     if (!data) {
-      throw new Error();
+      throw HttpError(404, "Not found");
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.log(error.message);
-    res.status(404).json({ message: "Not found" });
+    next(error);
   }
 };
 
 const updateContactFavorite = async (req, res, next) => {
   try {
     if (Object.keys(req.body).length === 0) {
-      return res.status(400).json({ message: `missing field favorite` });
+      throw HttpError(400, "missing field favorite");
     }
 
     const validate = Joi.validateFavorite(req.body);
     if (validate.error) {
-      return validateError(validate, res);
+      throw HttpError(400, validate.error.details[0].message);
     }
 
     const data = await contactsAPI.updateStatusContact(
@@ -99,12 +108,12 @@ const updateContactFavorite = async (req, res, next) => {
     );
 
     if (!data) {
-      throw new Error();
+      throw HttpError(404, "Not found");
     }
     res.status(200).json(data);
   } catch (error) {
     console.log(error.message);
-    res.status(404).json({ message: "Not found" });
+    next(error);
   }
 };
 

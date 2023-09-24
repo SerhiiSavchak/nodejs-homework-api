@@ -1,6 +1,6 @@
 const Joi = require("joi");
 
-function validateData(data) {
+function validateContact(data) {
   const schema = Joi.object({
     name: Joi.string().required().messages({
       "string.base": `"name" should be a string`,
@@ -30,6 +30,6 @@ function validateFavorite(data) {
 }
 
 module.exports = {
-  validateData,
+  validateContact,
   validateFavorite,
 };
