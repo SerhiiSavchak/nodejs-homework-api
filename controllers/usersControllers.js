@@ -100,10 +100,26 @@ const getUpdateSub = async (req, res, next) => {
   }
 };
 
+const getUpdateAvatar = async (req, res, next) => {
+  try {
+    const data = await userApi.updateAvatarUser(req.file, req.user);
+    if (!data) {
+      throw HttpError(401, "Not authorized");
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+
+    next(error);
+  }
+};
+
 module.exports = {
   getRegister,
   getLogin,
   getLogout,
   getCurrentUser,
   getUpdateSub,
+  getUpdateAvatar,
 };
