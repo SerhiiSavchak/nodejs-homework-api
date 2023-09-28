@@ -5,6 +5,11 @@ const gravatar = require("gravatar");
 const fs = require("fs/promises");
 const path = require("path");
 const changeAvatarSize = require("../helpers/jimp");
+const { nanoid } = require("nanoid");
+const sendEmail = require("../helpers/sendEmail");
+require("dotenv").config();
+
+const { BASE_URL } = process.env;
 
 const createUser = async (body) => {
   const { email } = body;
@@ -15,12 +20,22 @@ const createUser = async (body) => {
   }
   const hashPassword = await hashApi.getHashPassword(body.password);
   const avatarURL = gravatar.url(email);
-
+  const verificationToken = nanoid();
   const newUser = await User.create({
     ...body,
     password: hashPassword,
     avatarURL,
+    verificationToken,
   });
+
+  const verifyEmail = {
+    from: "intelekt200012@gmail.com",
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}" >Click to verify email</a>`,
+  };
+
+  await sendEmail(verifyEmail);
 
   return (
     {
@@ -41,9 +56,12 @@ const loginUser = async (body) => {
     password,
     user.password
   );
-  console.log(user);
+
   if (!user || !isValidPass) {
     return null;
+  }
+  if (!user.verify) {
+    return "Email not verify";
   }
 
   const token = tokenApi.createToken({ _id: user._id });
@@ -117,6 +135,46 @@ const updateAvatarUser = async (file, userId) => {
   return { avatarURL: avatarPath };
 };
 
+const verifyUser = async (verificationToken) => {
+  const user = await User.findOne({ verificationToken });
+
+  if (!user) {
+    return null;
+  }
+
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: null,
+  });
+  return {
+    message: "Verification successful",
+  };
+};
+
+const extraVerifyUser = async (body) => {
+  const { email } = body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return null;
+  }
+  if (user.verify) {
+    return {
+      message: "Verification has already been passed",
+    };
+  }
+  const verifyEmail = {
+    from: "intelekt200012@gmail.com",
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationToken}" >Click to verify email</a>`,
+  };
+
+  await sendEmail(verifyEmail);
+  return {
+    message: "Verification email sent",
+  };
+};
+
 module.exports = {
   createUser,
   loginUser,
@@ -124,4 +182,6 @@ module.exports = {
   currentUser,
   updateSupUser,
   updateAvatarUser,
+  verifyUser,
+  extraVerifyUser,
 };
