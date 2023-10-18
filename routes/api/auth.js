@@ -6,6 +6,8 @@ const {
   getCurrentUser,
   getUpdateSub,
   getUpdateAvatar,
+  getVerifyEmail,
+  getExtraVerifyEmail,
 } = require("../../controllers/usersControllers");
 
 const uploadFile = require("../../middlewares/upload");
@@ -13,6 +15,8 @@ const uploadFile = require("../../middlewares/upload");
 const authenticate = require("../../middlewares/auth");
 
 const router = express.Router();
+
+router.patch("/", authenticate, getUpdateSub);
 
 router.post("/register", getRegister);
 
@@ -22,7 +26,9 @@ router.post("/logout", authenticate, getLogout);
 
 router.get("/current", authenticate, getCurrentUser);
 
-router.patch("/", authenticate, getUpdateSub);
+router.post("/verify", getExtraVerifyEmail);
+
+router.get("/verify/:verificationToken", getVerifyEmail);
 
 router.patch(
   "/avatars",

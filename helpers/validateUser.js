@@ -28,5 +28,14 @@ function validateSub(data) {
   });
   return schema.validate(data);
 }
+function validateEmail(data) {
+  const schema = Joi.object({
+    email: Joi.string().required().messages({
+      "string.base": `"email" should be a string`,
+      "any.required": `missing required email field`,
+    }),
+  });
+  return schema.validate(data);
+}
 
-module.exports = { validateUser, validateSub };
+module.exports = { validateUser, validateSub, validateEmail };
